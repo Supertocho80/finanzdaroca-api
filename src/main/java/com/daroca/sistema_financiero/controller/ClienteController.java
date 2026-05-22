@@ -4,6 +4,8 @@ import com.daroca.sistema_financiero.dto.CarteraResponseDto;
 import com.daroca.sistema_financiero.dto.InformePatrimonioDto;
 import com.daroca.sistema_financiero.entity.Cliente;
 import com.daroca.sistema_financiero.entity.Rol;
+import com.daroca.sistema_financiero.entity.Usuario;
+import com.daroca.sistema_financiero.security.SecurityAuditService;
 import com.daroca.sistema_financiero.service.ClienteService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -25,19 +27,27 @@ import org.springframework.web.bind.annotation.RestController;
 public class ClienteController {
 
     private final ClienteService clienteService;
+    private final SecurityAuditService securityAuditService;
 
     @GetMapping
     public ResponseEntity<List<Cliente>> listar(
             @RequestParam(required = false) Long usuarioId,
             @RequestParam(required = false) Rol rol) {
-        if (usuarioId != null && rol != null) {
-            return ResponseEntity.ok(clienteService.obtenerClientesPorUsuario(usuarioId, rol));
+        Usuario usuario = securityAuditService.obtenerUsuarioAutenticado();
+
+        if (usuario.getRol() == Rol.ADMIN) {
+            if (usuarioId != null && rol != null) {
+                return ResponseEntity.ok(clienteService.obtenerClientesPorUsuario(usuarioId, rol));
+            }
+            return ResponseEntity.ok(clienteService.listarTodos());
         }
-        return ResponseEntity.ok(clienteService.listarTodos());
+
+        return ResponseEntity.ok(clienteService.obtenerClientesPorUsuario(usuario.getId(), Rol.ASESOR));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Cliente> obtenerPorId(@PathVariable Long id) {
+        securityAuditService.verificarAccesoCliente(id);
         return ResponseEntity.ok(clienteService.obtenerPorId(id));
     }
 
@@ -45,6 +55,7 @@ public class ClienteController {
     public ResponseEntity<InformePatrimonioDto> obtenerPatrimonio(
             @PathVariable Long id,
             @RequestParam(defaultValue = "EUR") String divisa) {
+        securityAuditService.verificarAccesoCliente(id);
         return ResponseEntity.ok(clienteService.calcularPatrimonio(id, divisa.toUpperCase()));
     }
 
@@ -52,21 +63,26 @@ public class ClienteController {
     public ResponseEntity<CarteraResponseDto> obtenerCartera(
             @PathVariable Long id,
             @RequestParam(defaultValue = "EUR") String divisa) {
+        securityAuditService.verificarAccesoCliente(id);
         return ResponseEntity.ok(clienteService.obtenerCarteraConsolidada(id, divisa.toUpperCase()));
     }
 
     @PostMapping
     public ResponseEntity<Cliente> crear(@RequestBody Cliente cliente) {
+        securityAuditService.verificarAsesorPuedeAsignarCliente(cliente);
         return ResponseEntity.status(HttpStatus.CREATED).body(clienteService.crear(cliente));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Cliente> actualizar(@PathVariable Long id, @RequestBody Cliente cliente) {
+        securityAuditService.verificarAccesoCliente(id);
+        securityAuditService.verificarAsesorPuedeAsignarCliente(cliente);
         return ResponseEntity.ok(clienteService.actualizar(id, cliente));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        securityAuditService.verificarAccesoCliente(id);
         clienteService.eliminar(id);
         return ResponseEntity.noContent().build();
     }

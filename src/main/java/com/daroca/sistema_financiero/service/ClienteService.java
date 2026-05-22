@@ -10,6 +10,7 @@ import com.daroca.sistema_financiero.entity.Rol;
 import com.daroca.sistema_financiero.entity.TipoOperacion;
 import com.daroca.sistema_financiero.entity.Transaccion;
 import com.daroca.sistema_financiero.integration.YahooFinanceChartClient;
+import com.daroca.sistema_financiero.util.MonedaFinancieraUtil;
 import com.daroca.sistema_financiero.repository.ClienteRepository;
 import com.daroca.sistema_financiero.repository.TransaccionRepository;
 import com.daroca.sistema_financiero.repository.UsuarioRepository;
@@ -131,7 +132,7 @@ public class ClienteService {
             BigDecimal precioMedioCompra = redondear(convertirADivisaDestino(
                     precioMedioOriginal, monedaOriginal, divisa, tiposCambioCache));
             BigDecimal precioMercadoActual = redondear(convertirADivisaDestino(
-                    BigDecimal.valueOf(activo.getPrecioMercado()), monedaOriginal, divisa, tiposCambioCache));
+                    obtenerPrecioMercadoNormalizado(activo), monedaOriginal, divisa, tiposCambioCache));
 
             BigDecimal cantidad = BigDecimal.valueOf(posicion.cantidad);
             BigDecimal valoracionTotal = redondear(precioMercadoActual.multiply(cantidad));
@@ -289,16 +290,18 @@ public class ClienteService {
 
     private String obtenerMonedaTransaccion(Transaccion transaccion) {
         if (transaccion.getMoneda() != null && !transaccion.getMoneda().isBlank()) {
-            return transaccion.getMoneda().toUpperCase();
+            return MonedaFinancieraUtil.normalizarMoneda(transaccion.getMoneda());
         }
         return "EUR";
     }
 
     private String obtenerMonedaActivo(ActivoFinanciero activo) {
-        if (activo.getMoneda() != null && !activo.getMoneda().isBlank()) {
-            return activo.getMoneda().toUpperCase();
-        }
-        return "EUR";
+        return MonedaFinancieraUtil.normalizarMoneda(activo.getMoneda());
+    }
+
+    private BigDecimal obtenerPrecioMercadoNormalizado(ActivoFinanciero activo) {
+        return MonedaFinancieraUtil.normalizarPrecio(
+                BigDecimal.valueOf(activo.getPrecioMercado()), activo.getMoneda());
     }
 
     private boolean evaluarAlertaMifid(String perfilRiesgo, String ticker) {

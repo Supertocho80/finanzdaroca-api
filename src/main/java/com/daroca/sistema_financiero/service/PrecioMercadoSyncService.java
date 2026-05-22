@@ -33,9 +33,7 @@ public class PrecioMercadoSyncService {
 
                 ChartQuote quote = quoteOpt.get();
                 activo.setPrecioMercado(quote.price());
-                if (quote.currency() != null) {
-                    activo.setMoneda(quote.currency());
-                }
+                activo.setMoneda(quote.currency());
 
                 activoFinancieroRepository.save(activo);
                 log.info("Precio actualizado para {}: {} {}", activo.getTicker(), quote.price(),

@@ -6,6 +6,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Optional;
+import com.daroca.sistema_financiero.util.MonedaFinancieraUtil;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -63,7 +64,11 @@ public class YahooFinanceChartClient {
                 currency = monedaNode.asText();
             }
 
-            return Optional.of(new ChartQuote(precioNode.asDouble(), currency));
+            double precio = precioNode.asDouble();
+            double precioNormalizado = MonedaFinancieraUtil.normalizarPrecio(precio, currency);
+            String monedaNormalizada = MonedaFinancieraUtil.normalizarMoneda(currency);
+
+            return Optional.of(new ChartQuote(precioNormalizado, monedaNormalizada));
         } catch (Exception e) {
             return Optional.empty();
         }
