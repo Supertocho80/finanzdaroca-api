@@ -31,4 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Postgres files
 .postgres-data
+
+### Cookkies from the user
+cookie.txt
+cookies.txt

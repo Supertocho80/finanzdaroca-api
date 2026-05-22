@@ -1,7 +1,9 @@
 package com.daroca.sistema_financiero.security;
 
+import com.daroca.sistema_financiero.entity.Usuario;
 import com.daroca.sistema_financiero.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -17,11 +19,16 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return usuarioRepository.findByUsername(username)
-                .map(usuario -> User.builder()
-                        .username(usuario.getUsername())
-                        .password(usuario.getPassword())
-                        .roles(usuario.getRol().name())
-                        .build())
+                .map(this::construirUserDetails)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
+    }
+
+    private UserDetails construirUserDetails(Usuario usuario) {
+        String authority = "ROLE_" + usuario.getRol().name();
+        return User.builder()
+                .username(usuario.getUsername())
+                .password(usuario.getPassword())
+                .authorities(new SimpleGrantedAuthority(authority))
+                .build();
     }
 }
