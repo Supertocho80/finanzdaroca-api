@@ -36,5 +36,4 @@ build/
 .postgres-data
 
 ### Cookkies from the user
-cookie.txt
-cookies.txt
+cookie*.txt
