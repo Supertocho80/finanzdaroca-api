@@ -4,5 +4,7 @@ public enum TipoOperacion {
     COMPRA,
     VENTA,
     DEPOSITO,
-    RETIRO
+    RETIRO,
+    DIVIDENDO,
+    ALQUILER
 }

@@ -9,4 +9,6 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
     List<Transaccion> findByClienteId(Long clienteId);
 
     List<Transaccion> findByClienteIdOrderByFechaAsc(Long clienteId);
+
+    List<Transaccion> findByClienteIdOrderByFechaDesc(Long clienteId);
 }

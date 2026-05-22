@@ -37,3 +37,9 @@ build/
 
 ### Cookkies from the user
 cookie*.txt
+
+### Python
+venv/
+__pycache__/
+
+.env

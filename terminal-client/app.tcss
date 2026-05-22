@@ -1,0 +1,112 @@
+Screen {
+    background: #0b0f14;
+    color: #c9d1d9;
+}
+
+#login-form {
+    width: 52;
+    height: auto;
+    padding: 2 3;
+    border: tall #1f6feb;
+    background: #111820;
+    align: center middle;
+}
+
+#login-form .login-title {
+    text-style: bold;
+    color: #58a6ff;
+    text-align: center;
+    width: 100%;
+    margin-bottom: 1;
+}
+
+#login-form Input {
+    margin-bottom: 1;
+    border: tall #30363d;
+    background: #0d1117;
+}
+
+#login-form Button {
+    width: 100%;
+    margin-top: 1;
+    background: #238636;
+    color: #ffffff;
+}
+
+#login-form Button:hover {
+    background: #2ea043;
+}
+
+#dashboard-grid {
+    layout: grid;
+    grid-size: 2;
+    grid-columns: 1fr 2fr;
+    grid-gutter: 1 2;
+    padding: 1 2;
+    height: 1fr;
+}
+
+.panel {
+    border: tall #30363d;
+    background: #111820;
+    padding: 1 2;
+    height: 100%;
+}
+
+.panel-title {
+    text-style: bold;
+    color: #58a6ff;
+    margin-bottom: 1;
+}
+
+.nav-line {
+    margin: 0 0 1 0;
+}
+
+.nav-highlight {
+    text-style: bold;
+    height: 3;
+    margin: 1 0;
+    padding: 0 1;
+    background: #161b22;
+    border-left: thick #1f6feb;
+}
+
+.profit {
+    color: #3fb950;
+}
+
+.loss {
+    color: #f85149;
+}
+
+.neutral {
+    color: #8b949e;
+}
+
+#positions-table {
+    height: 1fr;
+    border: tall #21262d;
+}
+
+DataTable {
+    background: #0d1117;
+}
+
+DataTable > .datatable--header {
+    background: #161b22;
+    color: #58a6ff;
+    text-style: bold;
+}
+
+DataTable > .datatable--cursor {
+    background: #1f6feb 40%;
+}
+
+Footer {
+    background: #161b22;
+}
+
+Header {
+    background: #161b22;
+}

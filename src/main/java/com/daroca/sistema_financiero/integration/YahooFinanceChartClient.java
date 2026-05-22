@@ -8,6 +8,9 @@ import java.time.Duration;
 import java.util.Optional;
 import com.daroca.sistema_financiero.util.MonedaFinancieraUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -28,8 +31,12 @@ public class YahooFinanceChartClient {
 
     private final JsonMapper jsonMapper = JsonMapper.builder().build();
 
+    @Lazy
+    @Autowired
+    private YahooFinanceChartClient self;
+
     public Optional<Double> fetchRegularMarketPrice(String symbol) {
-        return fetchChartQuote(symbol).map(ChartQuote::price);
+        return self.fetchChartQuote(symbol).map(ChartQuote::price);
     }
 
     public Optional<Double> fetchTipoCambio(String monedaOrigen, String divisaDestino) {
@@ -43,6 +50,7 @@ public class YahooFinanceChartClient {
         return fetchRegularMarketPrice(monedaOrigen.toUpperCase() + divisaDestino.toUpperCase() + "=X");
     }
 
+    @Cacheable("cotizaciones")
     public Optional<ChartQuote> fetchChartQuote(String symbol) {
         if (symbol == null || symbol.isBlank()) {
             log.warn("Ticker inválido para consulta Yahoo Finance");

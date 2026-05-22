@@ -45,6 +45,12 @@ docker compose up -d
 
 ```
 
+Copia `.env` en la raíz (o créalo) con `DB_PASSWORD=secret123`. Spring lo carga vía `spring.config.import=optional:file:.env[.properties]`.
+
+> **Si ves `password authentication failed`:** el volumen `.postgres-data` se creó con otra contraseña. Opción A (sin borrar datos):  
+> `docker exec finanzas-db psql -U admin_daroca -d finanz_daroca -c "ALTER USER admin_daroca WITH PASSWORD 'secret123';"`  
+> Opción B (BD limpia): `docker compose down -v && docker compose up -d`
+
 ### 2. Arranque del Servidor Backend
 
 ```bash
@@ -62,12 +68,18 @@ Para garantizar la seguridad, la API requiere autenticación mediante sesión (C
 
 ### Paso 1: Iniciar Sesión (Obtener JSESSIONID)
 
-El sistema precarga un usuario de prueba (`asesor_aleix` / `1234`).
+El sistema precarga usuarios de prueba (contraseña común: `secret123`):
+
+| Usuario | Rol |
+|---------|-----|
+| `admin_jefe` | ADMIN |
+| `asesor_aleix` | ASESOR |
+| `asesor_maria` | ASESOR |
 
 ```bash
 curl -i -X POST http://localhost:8080/api/login \
 -H "Content-Type: application/json" \
--d '{"username": "asesor_aleix", "password": "1234"}' \
+-d '{"username": "asesor_aleix", "password": "secret123"}' \
 -c cookies.txt
 
 ```

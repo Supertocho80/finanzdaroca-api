@@ -99,7 +99,10 @@ public class ClienteService {
 
             TipoOperacion tipo = transaccion.getTipoOperacion();
 
-            if (tipo == TipoOperacion.COMPRA || tipo == TipoOperacion.VENTA) {
+            if (tipo == TipoOperacion.COMPRA
+                    || tipo == TipoOperacion.VENTA
+                    || tipo == TipoOperacion.DIVIDENDO
+                    || tipo == TipoOperacion.ALQUILER) {
                 ActivoFinanciero activo = transaccion.getActivoFinanciero();
                 if (activo == null) {
                     log.warn(
@@ -121,6 +124,7 @@ public class ClienteService {
                 case RETIRO -> procesarRetiro(transaccion, saldosEfectivo, capitalDepositadoPorDivisa, ultimaFechaPorDivisa);
                 case COMPRA -> procesarCompra(transaccion, posicionesActivosMap, saldosEfectivo, ultimaFechaPorDivisa);
                 case VENTA -> procesarVenta(transaccion, posicionesActivosMap, saldosEfectivo, ultimaFechaPorDivisa);
+                case DIVIDENDO, ALQUILER -> procesarIngresoOrganico(transaccion, saldosEfectivo, ultimaFechaPorDivisa);
             }
         }
 
@@ -245,6 +249,22 @@ public class ClienteService {
         BigDecimal monto = BigDecimal.valueOf(transaccion.getPrecioEjecucion());
         saldosEfectivo.merge(moneda, monto.negate(), BigDecimal::add);
         capitalDepositadoPorDivisa.merge(moneda, monto.negate(), BigDecimal::add);
+        ultimaFechaPorDivisa.put(moneda, transaccion.getFecha());
+    }
+
+    /**
+     * Ingreso orgánico (dividendo, alquiler): suma efectivo sin incrementar capital depositado.
+     */
+    private void procesarIngresoOrganico(
+            Transaccion transaccion,
+            Map<String, BigDecimal> saldosEfectivo,
+            Map<String, LocalDateTime> ultimaFechaPorDivisa) {
+        ActivoFinanciero activo = transaccion.getActivoFinanciero();
+        String moneda = obtenerMonedaActivo(activo);
+        int cantidad = transaccion.getCantidad() != null ? transaccion.getCantidad() : 1;
+        BigDecimal importe = BigDecimal.valueOf(cantidad)
+                .multiply(BigDecimal.valueOf(transaccion.getPrecioEjecucion()));
+        saldosEfectivo.merge(moneda, importe, BigDecimal::add);
         ultimaFechaPorDivisa.put(moneda, transaccion.getFecha());
     }
 
