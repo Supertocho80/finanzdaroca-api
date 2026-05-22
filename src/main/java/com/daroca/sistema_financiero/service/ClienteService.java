@@ -42,11 +42,12 @@ public class ClienteService {
         return clienteRepository.findByAsesorId(usuarioId);
     }
 
-    public Double calcularPatrimonio(Long clienteId) {
+    public BigDecimal calcularPatrimonio(Long clienteId, String divisaDestino) {
         if (!clienteRepository.existsById(clienteId)) {
             throw new RuntimeException("Cliente no encontrado con id: " + clienteId);
         }
 
+        String divisa = divisaDestino.toUpperCase();
         List<Transaccion> transacciones = transaccionRepository.findByClienteId(clienteId);
         BigDecimal patrimonio = BigDecimal.ZERO;
         Map<String, BigDecimal> tiposCambioCache = new HashMap<>();
@@ -56,33 +57,45 @@ public class ClienteService {
             BigDecimal valorPosicion = BigDecimal.valueOf(transaccion.getCantidad())
                     .multiply(BigDecimal.valueOf(activo.getPrecioMercado()));
 
-            BigDecimal valorEnEur = convertirAEuros(valorPosicion, activo.getMoneda(), tiposCambioCache);
+            BigDecimal valorConvertido = convertirADivisaDestino(
+                    valorPosicion, activo.getMoneda(), divisa, tiposCambioCache);
 
             if (transaccion.getTipoOperacion() == TipoOperacion.COMPRA) {
-                patrimonio = patrimonio.add(valorEnEur);
+                patrimonio = patrimonio.add(valorConvertido);
             } else {
-                patrimonio = patrimonio.subtract(valorEnEur);
+                patrimonio = patrimonio.subtract(valorConvertido);
             }
         }
 
-        return patrimonio.setScale(2, RoundingMode.DOWN).doubleValue();
+        return patrimonio.setScale(2, RoundingMode.DOWN);
     }
 
-    private BigDecimal convertirAEuros(BigDecimal valor, String moneda, Map<String, BigDecimal> tiposCambioCache) {
-        if (moneda == null || "EUR".equalsIgnoreCase(moneda)) {
+    private BigDecimal convertirADivisaDestino(
+            BigDecimal valor,
+            String monedaOrigen,
+            String divisaDestino,
+            Map<String, BigDecimal> tiposCambioCache) {
+        if (monedaOrigen == null) {
+            monedaOrigen = "EUR";
+        }
+
+        if (monedaOrigen.equalsIgnoreCase(divisaDestino)) {
             return valor;
         }
 
-        BigDecimal tipoCambio = tiposCambioCache.computeIfAbsent(moneda, this::obtenerTipoCambioAEur);
+        String moneda = monedaOrigen.toUpperCase();
+        String cacheKey = moneda + divisaDestino;
+        BigDecimal tipoCambio = tiposCambioCache.computeIfAbsent(
+                cacheKey, k -> obtenerTipoCambio(moneda, divisaDestino));
         return valor.multiply(tipoCambio);
     }
 
-    private BigDecimal obtenerTipoCambioAEur(String moneda) {
-        String parDivisa = moneda + "EUR=X";
+    private BigDecimal obtenerTipoCambio(String monedaOrigen, String divisaDestino) {
+        String parDivisa = monedaOrigen + divisaDestino + "=X";
         return yahooFinanceChartClient.fetchRegularMarketPrice(parDivisa)
                 .map(BigDecimal::valueOf)
                 .orElseThrow(() -> new RuntimeException(
-                        "No se pudo obtener el tipo de cambio para " + moneda + " hacia EUR"));
+                        "No se pudo obtener el tipo de cambio para " + monedaOrigen + " hacia " + divisaDestino));
     }
 
     public Cliente crear(Cliente cliente) {
