@@ -31,4 +31,6 @@ public class ActivoFinanciero {
 
     @Column(nullable = false)
     private Double precioMercado;
+
+    private String moneda;
 }

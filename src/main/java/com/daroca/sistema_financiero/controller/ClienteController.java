@@ -39,6 +39,11 @@ public class ClienteController {
         return ResponseEntity.ok(clienteService.obtenerPorId(id));
     }
 
+    @GetMapping("/{id}/patrimonio")
+    public ResponseEntity<Double> obtenerPatrimonio(@PathVariable Long id) {
+        return ResponseEntity.ok(clienteService.calcularPatrimonio(id));
+    }
+
     @PostMapping
     public ResponseEntity<Cliente> crear(@RequestBody Cliente cliente) {
         return ResponseEntity.status(HttpStatus.CREATED).body(clienteService.crear(cliente));

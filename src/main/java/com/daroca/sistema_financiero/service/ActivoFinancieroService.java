@@ -30,6 +30,7 @@ public class ActivoFinancieroService {
         activo.setTicker(activoActualizado.getTicker());
         activo.setNombre(activoActualizado.getNombre());
         activo.setPrecioMercado(activoActualizado.getPrecioMercado());
+        activo.setMoneda(activoActualizado.getMoneda());
         return activoFinancieroRepository.save(activo);
     }
 
