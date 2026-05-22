@@ -22,11 +22,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class ClienteService {
 
@@ -85,7 +88,33 @@ public class ClienteService {
         Map<String, BigDecimal> tiposCambioCache = new HashMap<>();
 
         for (Transaccion transaccion : transacciones) {
+            log.info(
+                    "Procesando transacción id={} tipo={} clienteId={} activoId={}",
+                    transaccion.getId(),
+                    transaccion.getTipoOperacion(),
+                    clienteId,
+                    transaccion.getActivoFinanciero() != null
+                            ? transaccion.getActivoFinanciero().getId()
+                            : null);
+
             TipoOperacion tipo = transaccion.getTipoOperacion();
+
+            if (tipo == TipoOperacion.COMPRA || tipo == TipoOperacion.VENTA) {
+                ActivoFinanciero activo = transaccion.getActivoFinanciero();
+                if (activo == null) {
+                    log.warn(
+                            "Transacción con datos corruptos encontrada, ignorando... id={} (activo nulo)",
+                            transaccion.getId());
+                    continue;
+                }
+                if (activo.getMoneda() == null) {
+                    log.warn(
+                            "Transacción con datos corruptos encontrada, ignorando... id={} activoId={} (moneda nula)",
+                            transaccion.getId(),
+                            activo.getId());
+                    continue;
+                }
+            }
 
             switch (tipo) {
                 case DEPOSITO -> procesarDeposito(transaccion, saldosEfectivo, capitalDepositadoPorDivisa, ultimaFechaPorDivisa);
@@ -125,6 +154,14 @@ public class ClienteService {
             }
 
             ActivoFinanciero activo = posicion.activo;
+            if (activo == null || activo.getMoneda() == null || activo.getPrecioMercado() == null) {
+                log.warn(
+                        "Posición con activo corrupto ignorada en valoración (activoId={})",
+                        activo != null ? activo.getId() : null);
+                continue;
+            }
+
+            log.info("Valorando posición activoId={} ticker={}", activo.getId(), activo.getTicker());
             String monedaOriginal = obtenerMonedaActivo(activo);
 
             BigDecimal precioMedioOriginal = posicion.costeTotal.divide(
@@ -246,7 +283,11 @@ public class ClienteService {
 
         PosicionActivo posicion = posicionesActivosMap.get(activo.getTicker());
         if (posicion == null || posicion.cantidad < cantidad) {
-            throw new RuntimeException("Venta inválida: posición insuficiente en " + activo.getTicker());
+            log.warn(
+                    "Transacción con datos corruptos encontrada, ignorando... id={} (venta sin posición suficiente en {})",
+                    transaccion.getId(),
+                    activo.getTicker());
+            return;
         }
 
         BigDecimal precioMedio = posicion.costeTotal.divide(
@@ -312,6 +353,9 @@ public class ClienteService {
     }
 
     private boolean esActivoUltraEstable(String ticker) {
+        if (ticker == null) {
+            return false;
+        }
         return TICKERS_RENTA_FIJA_ULTRA_ESTABLES.contains(ticker.toUpperCase());
     }
 
@@ -358,17 +402,25 @@ public class ClienteService {
 
         String moneda = monedaOrigen.toUpperCase();
         String cacheKey = moneda + divisaDestino;
-        BigDecimal tipoCambio = tiposCambioCache.computeIfAbsent(
-                cacheKey, k -> obtenerTipoCambio(moneda, divisaDestino));
-        return valor.multiply(tipoCambio);
+
+        if (!tiposCambioCache.containsKey(cacheKey)) {
+            Optional<BigDecimal> tipoCambioOpt = obtenerTipoCambio(moneda, divisaDestino);
+            if (tipoCambioOpt.isEmpty()) {
+                log.warn(
+                        "Tipo de cambio no disponible para {} -> {}, se mantiene el importe sin convertir",
+                        moneda,
+                        divisaDestino);
+                return valor;
+            }
+            tiposCambioCache.put(cacheKey, tipoCambioOpt.get());
+        }
+
+        return valor.multiply(tiposCambioCache.get(cacheKey));
     }
 
-    private BigDecimal obtenerTipoCambio(String monedaOrigen, String divisaDestino) {
-        String parDivisa = monedaOrigen + divisaDestino + "=X";
-        return yahooFinanceChartClient.fetchRegularMarketPrice(parDivisa)
-                .map(BigDecimal::valueOf)
-                .orElseThrow(() -> new RuntimeException(
-                        "No se pudo obtener el tipo de cambio para " + monedaOrigen + " hacia " + divisaDestino));
+    private Optional<BigDecimal> obtenerTipoCambio(String monedaOrigen, String divisaDestino) {
+        return yahooFinanceChartClient.fetchTipoCambio(monedaOrigen, divisaDestino)
+                .map(BigDecimal::valueOf);
     }
 
     public Cliente crear(Cliente cliente) {

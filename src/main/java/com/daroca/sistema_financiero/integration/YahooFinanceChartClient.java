@@ -7,11 +7,13 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Optional;
 import com.daroca.sistema_financiero.util.MonedaFinancieraUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 @Component
+@Slf4j
 public class YahooFinanceChartClient {
 
     public record ChartQuote(double price, String currency) {}
@@ -30,7 +32,23 @@ public class YahooFinanceChartClient {
         return fetchChartQuote(symbol).map(ChartQuote::price);
     }
 
+    public Optional<Double> fetchTipoCambio(String monedaOrigen, String divisaDestino) {
+        if (monedaOrigen == null || monedaOrigen.isBlank() || divisaDestino == null || divisaDestino.isBlank()) {
+            log.warn("Par de divisas inválido para tipo de cambio: {} -> {}", monedaOrigen, divisaDestino);
+            return Optional.empty();
+        }
+        if (monedaOrigen.equalsIgnoreCase(divisaDestino)) {
+            return Optional.of(1.0);
+        }
+        return fetchRegularMarketPrice(monedaOrigen.toUpperCase() + divisaDestino.toUpperCase() + "=X");
+    }
+
     public Optional<ChartQuote> fetchChartQuote(String symbol) {
+        if (symbol == null || symbol.isBlank()) {
+            log.warn("Ticker inválido para consulta Yahoo Finance");
+            return Optional.empty();
+        }
+
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(CHART_BASE_URL + symbol))
@@ -41,6 +59,7 @@ public class YahooFinanceChartClient {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
+                log.warn("Yahoo Finance respondió HTTP {} para el símbolo {}", response.statusCode(), symbol);
                 return Optional.empty();
             }
 
@@ -70,6 +89,7 @@ public class YahooFinanceChartClient {
 
             return Optional.of(new ChartQuote(precioNormalizado, monedaNormalizada));
         } catch (Exception e) {
+            log.warn("Error al consultar Yahoo Finance para {}: {}", symbol, e.getMessage());
             return Optional.empty();
         }
     }
