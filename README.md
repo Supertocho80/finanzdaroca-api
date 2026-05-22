@@ -170,6 +170,38 @@ Atajos útiles: **`q`** salir · **`r`** recargar pestaña activa.
 
 ---
 
+## ⚖️ Alcance del Sistema: API vs Cliente TUI
+
+FinanzDaroca adopta un enfoque **API-First**: el backend **Spring Boot** es el **motor completo y la fuente de verdad** del dominio. Concentra el 100 % de la lógica de negocio — evaluación **MiFID II**, cálculo de **NAV** multi-divisa, libro mayor de transacciones, seguridad por roles y el **CRON** de sincronización con **Yahoo Finance** (con caché anti rate-limit).
+
+El cliente **Textual TUI** (`terminal-client/`) es un **consumidor operativo opcional** que emula una terminal Bloomberg: cubre el flujo diario del asesor o administrador (alta de operaciones, consulta de cartera, CRM, catálogo de activos) y expone aproximadamente el **80 % de los endpoints REST** de forma interactiva. Cualquier capacidad no disponible en la terminal permanece accesible vía **API pura** (`curl`, scripts o futuros frontends web/móviles).
+
+### Tabla comparativa de capacidades
+
+| Capacidad / Recurso | Backend API (Spring Boot) | TUI (Cliente Python) |
+|---------------------|---------------------------|----------------------|
+| Autenticación (`JSESSIONID`) | ✅ Soportado | ✅ Soportado |
+| Gestión de Usuarios (Staff) | ✅ CRUD completo (solo ADMIN) | ✅ Alta y baja (solo ADMIN) |
+| Gestión de Clientes (CRM) | ✅ CRUD completo + filtros por asesor | ✅ Alta, edición y baja |
+| Catálogo de activos | ✅ CRUD completo | ✅ Alta y baja (edición vía API) |
+| Transacciones y libro mayor | ✅ Global (ADMIN) e individual (ASESOR) | ✅ Historial individual por cliente |
+| Cálculo NAV y cartera | ✅ Multi-divisa dinámica (`?divisa=`) | ✅ Fijado a divisa base (EUR) |
+| Intereses y devengos | ✅ Desglose de intereses generados | ❌ Agrupado en saldo total |
+| Sincronización Yahoo Finance | ✅ Automática asíncrona (`@Scheduled`) | ✅ Transparente al cliente |
+
+### Limitaciones operativas de la TUI
+
+Las operaciones siguientes están **reservadas a la API REST** (integraciones externas, automatización o `curl`). La TUI no las sustituye; el contrato oficial del sistema es siempre la API:
+
+- **Listado global de transacciones** del sistema (`GET /api/transacciones`) — solo **ADMIN**; la terminal solo muestra el historial por cliente.
+- **Alteración manual de la fecha** de una transacción en alta o edición — la TUI registra con la fecha del servidor (actual por defecto); la API acepta `fecha` en el cuerpo del `PUT`/`POST`.
+- **Edición (`PUT`) de activos financieros** existentes (ticker, nombre, precio de mercado, moneda) — solo **ADMIN** en backend; en Market la TUI permite crear y eliminar, no modificar.
+- **Cambio de divisa base** para consolidar y visualizar el NAV (`?divisa=USD`, `GBP`, etc.) — soportado dinámicamente por la API; la TUI consolida y muestra el informe en **EUR**.
+
+> **Integradores:** cualquier nuevo canal (web, móvil, reporting regulatorio) debe implementarse contra los endpoints documentados en esta guía, sin duplicar reglas de negocio fuera del backend.
+
+---
+
 ## 📖 Guía de Uso
 
 ### Usuarios de prueba
