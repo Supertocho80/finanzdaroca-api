@@ -34,14 +34,16 @@ public class Transaccion {
     private Cliente cliente;
 
     @ManyToOne
-    @JoinColumn(name = "activo_financiero_id", nullable = false)
+    @JoinColumn(name = "activo_financiero_id")
     private ActivoFinanciero activoFinanciero;
+
+    @Column(length = 3)
+    private String moneda;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TipoOperacion tipoOperacion;
 
-    @Column(nullable = false)
     private Integer cantidad;
 
     @Column(nullable = false)

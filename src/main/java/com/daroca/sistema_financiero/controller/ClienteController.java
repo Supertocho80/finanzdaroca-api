@@ -1,12 +1,11 @@
 package com.daroca.sistema_financiero.controller;
 
+import com.daroca.sistema_financiero.dto.CarteraResponseDto;
+import com.daroca.sistema_financiero.dto.InformePatrimonioDto;
 import com.daroca.sistema_financiero.entity.Cliente;
 import com.daroca.sistema_financiero.entity.Rol;
 import com.daroca.sistema_financiero.service.ClienteService;
-import java.math.BigDecimal;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,18 +42,17 @@ public class ClienteController {
     }
 
     @GetMapping("/{id}/patrimonio")
-    public ResponseEntity<Map<String, Object>> obtenerPatrimonio(
+    public ResponseEntity<InformePatrimonioDto> obtenerPatrimonio(
             @PathVariable Long id,
             @RequestParam(defaultValue = "EUR") String divisa) {
-        String divisaDestino = divisa.toUpperCase();
-        BigDecimal patrimonio = clienteService.calcularPatrimonio(id, divisaDestino);
+        return ResponseEntity.ok(clienteService.calcularPatrimonio(id, divisa.toUpperCase()));
+    }
 
-        Map<String, Object> respuesta = new LinkedHashMap<>();
-        respuesta.put("clienteId", id);
-        respuesta.put("patrimonio", patrimonio);
-        respuesta.put("moneda", divisaDestino);
-
-        return ResponseEntity.ok(respuesta);
+    @GetMapping("/{id}/cartera")
+    public ResponseEntity<CarteraResponseDto> obtenerCartera(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "EUR") String divisa) {
+        return ResponseEntity.ok(clienteService.obtenerCarteraConsolidada(id, divisa.toUpperCase()));
     }
 
     @PostMapping

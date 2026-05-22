@@ -9,5 +9,5 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      # MAGIA: El punto y barra (./) crea la carpeta en la raíz de tu proyecto
+      # Creamos el volumen dentro del proyecto
       - ./.postgres-data:/var/lib/postgresql/data
