@@ -1,4 +1,6 @@
-# 🏦 FinanzDaroca · Sistema Patrimonial Full-Stack
+# 🏦 FinanzDaroca · Full-Stack Wealth Management System
+
+English | [Español](README.es.md)
 
 ![Java](https://img.shields.io/badge/Java-21-orange.svg)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.6-brightgreen.svg)
@@ -8,36 +10,38 @@
 ![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED.svg)
 ![Security](https://img.shields.io/badge/Security-Spring%20Security-success.svg)
 
-Sistema integral de gestión patrimonial e inversiones para asesores financieros independientes. Desarrollado en el marco del programa **Kit Digital (NextGenerationEU)**, combina un **motor contable y normativo en Java** con un **cliente de terminal profesional en Python** que emula el flujo de trabajo de una **Terminal Bloomberg**: consulta de NAV, ejecución de operaciones, CRM de clientes y gobierno de mercado, todo gobernado por sesión y roles.
+> **Status: beta / learning project.** Built to explore how an asset-management backend looks in Spring Boot; the REST API is the core and the terminal client is an optional consumer.
+
+Wealth and investment management system for independent financial advisors. It combines an **accounting and compliance engine in Java** with a **professional terminal client in Python** that mimics the workflow of a **Bloomberg Terminal**: NAV queries, trade execution, client CRM and market management, all governed by session and roles.
 
 ---
 
-## 🚀 Arquitectura y Stack Tecnológico
+## 🚀 Architecture and Tech Stack
 
-El proyecto sigue una **arquitectura multicapa** con separación clara entre presentación, API, dominio y persistencia.
+The project follows a **layered architecture** with a clear separation between presentation, API, domain and persistence.
 
 ### Backend (Java / Spring Boot)
 
-| Capa | Tecnología |
+| Layer | Technology |
 |------|------------|
 | **Runtime** | Java 21, Spring Boot 4.0.6 |
 | **API** | REST (`spring-boot-starter-webmvc`) |
-| **Persistencia** | Spring Data JPA / Hibernate, PostgreSQL 15 |
-| **Seguridad** | Spring Security — autenticación stateful por cookie `JSESSIONID`, contraseñas BCrypt, RBAC y control de acceso por cliente (row-level) |
-| **Caché** | Spring Cache (`@EnableCaching`) — caché en memoria de cotizaciones Yahoo Finance |
-| **Integración** | `HttpClient` nativo → Yahoo Finance Chart API |
-| **Datos iniciales** | `schema.sql` + `data.sql` (idempotentes al arranque) |
-| **Configuración** | Variables en `.env` importadas vía `spring.config.import` |
+| **Persistence** | Spring Data JPA / Hibernate, PostgreSQL 15 |
+| **Security** | Spring Security — stateful authentication with a `JSESSIONID` cookie, BCrypt passwords, RBAC and per-client (row-level) access control |
+| **Cache** | Spring Cache (`@EnableCaching`) — in-memory cache of Yahoo Finance quotes |
+| **Integration** | Native `HttpClient` → Yahoo Finance Chart API |
+| **Seed data** | `schema.sql` + `data.sql` (idempotent on startup) |
+| **Configuration** | Variables in `.env` imported via `spring.config.import` |
 | **Testing** | JUnit 5, Mockito, AssertJ |
 
 ### Frontend (Python / Textual TUI)
 
-| Componente | Descripción |
+| Component | Description |
 |------------|-------------|
-| **Cliente** | `terminal-client/` — aplicación [Textual](https://textual.textualize.io/) (TUI) |
-| **Estilo** | Terminal tipo **Bloomberg** (paleta oscura, tablas densas, atajos de teclado) |
-| **Comunicación** | `api_client.py` — sesión HTTP con `requests`, cookie `JSESSIONID` tras login |
-| **Adaptabilidad** | Pestañas y acciones según rol devuelto por la API (`ADMIN` vs `ASESOR`) |
+| **Client** | `terminal-client/` — [Textual](https://textual.textualize.io/) application (TUI) |
+| **Style** | **Bloomberg**-style terminal (dark palette, dense tables, keyboard shortcuts) |
+| **Communication** | `api_client.py` — HTTP session with `requests`, `JSESSIONID` cookie after login |
+| **Adaptability** | Tabs and actions depend on the role returned by the API (`ADMIN` vs `ASESOR`, i.e. advisor) |
 
 ```
 ┌─────────────────────┐     JSESSIONID      ┌──────────────────────────┐
@@ -52,98 +56,98 @@ El proyecto sigue una **arquitectura multicapa** con separación clara entre pre
 
 ---
 
-## ✨ Características Principales (Business Logic)
+## ✨ Key Features (Business Logic)
 
-1. **Motor NAV (Net Asset Value) en tiempo real**  
-   Consolidación de patrimonio: efectivo multi-divisa (EUR, USD, GBP, GBp, etc.), valoración de activos vivos, tipos de cambio vía Yahoo y desglose de **billeteras de liquidez** (`posicionesEfectivo`) en la TUI.
+1. **Real-time NAV (Net Asset Value) engine**  
+   Wealth consolidation: multi-currency cash (EUR, USD, GBP, GBp, etc.), valuation of live assets, FX rates via Yahoo and a breakdown of **cash wallets** (`posicionesEfectivo`) in the TUI.
 
-2. **Multi-clase de activos y operaciones**  
-   - **Acciones:** `COMPRA` / `VENTA`  
-   - **Ingresos patrimoniales:** `DIVIDENDO`, `ALQUILER` (inmuebles u otros activos vinculados en catálogo)  
-   - **Tesorería:** `DEPOSITO` / `RETIRO` multi-divisa  
+2. **Multiple asset classes and transaction types**  
+   - **Stocks:** `COMPRA` / `VENTA` (buy / sell)  
+   - **Asset income:** `DIVIDENDO`, `ALQUILER` (dividend, rent — real estate or other assets linked in the catalogue)  
+   - **Treasury:** multi-currency `DEPOSITO` / `RETIRO` (deposit / withdrawal)  
 
-3. **Cuenta remunerada automática**  
-   Interés compuesto prorrateado (2 % anual) sobre liquidez no invertida.
+3. **Automatic interest-bearing account**  
+   Pro-rated compound interest (2% per year) on uninvested cash.
 
-4. **Cumplimiento MiFID II (alertas)**  
-   Detección de desalineación entre perfil `CONSERVADOR` y activos volátiles no exentos.
+4. **MiFID II compliance (alerts)**  
+   Detects mismatches between a `CONSERVADOR` (conservative) profile and volatile, non-exempt assets.
 
-5. **Caché de cotizaciones (anti rate-limit)**  
-   `@Cacheable("cotizaciones")` en `YahooFinanceChartClient` reduce llamadas repetidas a Yahoo Finance y mitiga bloqueos por IP al calcular NAV o sincronizar precios.
+5. **Quote cache (anti rate-limit)**  
+   `@Cacheable("cotizaciones")` on `YahooFinanceChartClient` reduces repeated calls to Yahoo Finance and mitigates IP blocking when calculating NAV or syncing prices.
 
-6. **Sincronización programada de mercado**  
-   Tarea `@Scheduled` actualiza precios de activos en base de datos desde Yahoo Finance.
+6. **Scheduled market synchronisation**  
+   A `@Scheduled` task updates asset prices in the database from Yahoo Finance.
 
-7. **Seguridad por sesión y por fila (RGPD / RBAC)**  
-   - **ADMIN:** acceso global (clientes, usuarios, activos, transacciones).  
-   - **ASESOR:** solo clientes asignados; la TUI **oculta o deshabilita** componentes (p. ej. pestaña *Usuarios & Staff*, borrado de activos) según el rol autenticado.
+7. **Session and row-level security (GDPR / RBAC)**  
+   - **ADMIN:** global access (clients, users, assets, transactions).  
+   - **ASESOR (advisor):** only assigned clients; the TUI **hides or disables** components (e.g. the *Usuarios & Staff* tab, deleting assets) depending on the authenticated role.
 
-8. **Trading Desk con historial editable**  
-   Alta, edición y baja de transacciones desde la TUI (corrección de errores operativos con recálculo automático del NAV).
+8. **Trading Desk with editable history**  
+   Create, edit and delete transactions from the TUI (fixing operational mistakes with automatic NAV recalculation).
 
 ---
 
-## ⚙️ Requisitos Previos
+## ⚙️ Prerequisites
 
-| Herramienta | Versión recomendada |
+| Tool | Recommended version |
 |-------------|---------------------|
-| **Docker** + Docker Compose | Reciente |
+| **Docker** + Docker Compose | Recent |
 | **JDK** | 21+ |
-| **Maven** | Incluido (`./mvnw`) |
+| **Maven** | Included (`./mvnw`) |
 | **Python** | 3.11+ |
-| **jq** (opcional) | Para formatear respuestas `curl` |
+| **jq** (optional) | To pretty-print `curl` responses |
 
 ---
 
-## 📦 Instalación y Arranque
+## 📦 Installation and Startup
 
-### Paso 0 · Variables de entorno (obligatorio)
+### Step 0 · Environment variables (required)
 
-Antes de levantar Docker o Spring, crea el archivo **`.env` en la raíz del repositorio**:
+Before starting Docker or Spring, create the **`.env` file in the repository root**:
 
 ```bash
-# .env (raíz del proyecto — NO subir a Git)
+# .env (project root — DO NOT commit to Git)
 DB_PASSWORD=secret123
 ```
 
-- Está listado en `.gitignore`.
-- **Docker Compose** lo usa vía `env_file` e interpolación `${DB_PASSWORD:-secret123}`.
-- **Spring Boot** lo carga con `spring.config.import=optional:file:.env[.properties]` y `spring.datasource.password=${DB_PASSWORD:secret123}`.
+- It is listed in `.gitignore`.
+- **Docker Compose** uses it via `env_file` and the interpolation `${DB_PASSWORD:-secret123}`.
+- **Spring Boot** loads it with `spring.config.import=optional:file:.env[.properties]` and `spring.datasource.password=${DB_PASSWORD:secret123}`.
 
-> **Error `password authentication failed`:** el volumen `.postgres-data` puede haberse creado con otra contraseña.  
-> - **Sin borrar datos:**  
+> **`password authentication failed` error:** the `.postgres-data` volume may have been created with a different password.  
+> - **Without deleting data:**  
 >   `docker exec finanzas-db psql -U admin_daroca -d finanz_daroca -c "ALTER USER admin_daroca WITH PASSWORD 'secret123';"`  
-> - **Base limpia:**  
+> - **Clean database:**  
 >   `docker compose down -v && docker compose up -d`
 
-### Paso 1 · Base de datos (Docker)
+### Step 1 · Database (Docker)
 
 ```bash
 docker compose up -d
 ```
 
-PostgreSQL queda expuesto en `localhost:5432` (BD: `finanz_daroca`, usuario: `admin_daroca`).
+PostgreSQL is exposed on `localhost:5432` (DB: `finanz_daroca`, user: `admin_daroca`).
 
-Para reiniciar desde cero (borra datos locales):
+To start from scratch (deletes local data):
 
 ```bash
 docker compose down -v
 docker compose up -d
 ```
 
-### Paso 2 · Backend (Spring Boot)
+### Step 2 · Backend (Spring Boot)
 
-Desde la raíz del proyecto:
+From the project root:
 
 ```bash
 ./mvnw clean spring-boot:run
 ```
 
-API disponible en **`http://localhost:8080`**.
+API available at **`http://localhost:8080`**.
 
-### Paso 3 · Frontend TUI (Python / Textual)
+### Step 3 · TUI frontend (Python / Textual)
 
-En otra terminal:
+In another terminal:
 
 ```bash
 cd terminal-client
@@ -154,81 +158,81 @@ pip install -r requirements.txt
 python app.py
 ```
 
-La TUI se conecta por defecto a `http://localhost:8080`. Inicia sesión con uno de los usuarios de prueba (tabla inferior).
+By default the TUI connects to `http://localhost:8080`. Log in with one of the test users (table below).
 
-#### Pestañas principales de la TUI
+#### Main TUI tabs
 
-| Pestaña | Función |
+| Tab | Purpose |
 |---------|---------|
-| **NAV & Portfolio** | Informe patrimonial, posiciones de activos y billeteras de efectivo |
-| **Trading Desk** | Historial de operaciones + alta/edición/baja de transacciones |
-| **CRM Clientes** | Gestión de clientes y asignación de asesor |
-| **Market Activos** | Catálogo de tickers y precios |
-| **Usuarios & Staff** | Solo **ADMIN** — gestión de usuarios del sistema |
+| **NAV & Portfolio** | Wealth report, asset positions and cash wallets |
+| **Trading Desk** | Transaction history + create/edit/delete transactions |
+| **CRM Clientes** | Client management and advisor assignment |
+| **Market Activos** | Ticker and price catalogue |
+| **Usuarios & Staff** | **ADMIN** only — system user management |
 
-Atajos útiles: **`q`** salir · **`r`** recargar pestaña activa.
+Useful shortcuts: **`q`** quit · **`r`** reload active tab.
 
 ---
 
-## ⚖️ Alcance del Sistema: API vs Cliente TUI
+## ⚖️ System Scope: API vs TUI Client
 
-FinanzDaroca adopta un enfoque **API-First**: el backend **Spring Boot** es el **motor completo y la fuente de verdad** del dominio. Concentra el 100 % de la lógica de negocio — evaluación **MiFID II**, cálculo de **NAV** multi-divisa, libro mayor de transacciones, seguridad por roles y el **CRON** de sincronización con **Yahoo Finance** (con caché anti rate-limit).
+FinanzDaroca takes an **API-first** approach: the **Spring Boot** backend is the **complete engine and the source of truth** for the domain. It holds 100% of the business logic — **MiFID II** checks, multi-currency **NAV** calculation, the transaction ledger, role-based security and the **CRON** job that syncs with **Yahoo Finance** (with an anti rate-limit cache).
 
-El cliente **Textual TUI** (`terminal-client/`) es un **consumidor operativo opcional** que emula una terminal Bloomberg: cubre el flujo diario del asesor o administrador (alta de operaciones, consulta de cartera, CRM, catálogo de activos) y expone aproximadamente el **80 % de los endpoints REST** de forma interactiva. Cualquier capacidad no disponible en la terminal permanece accesible vía **API pura** (`curl`, scripts o futuros frontends web/móviles).
+The **Textual TUI** client (`terminal-client/`) is an **optional operational consumer** that mimics a Bloomberg terminal: it covers the daily workflow of an advisor or administrator (entering transactions, viewing portfolios, CRM, asset catalogue) and exposes roughly **80% of the REST endpoints** interactively. Anything not available in the terminal remains accessible via the **plain API** (`curl`, scripts or future web/mobile frontends).
 
-### Tabla comparativa de capacidades
+### Capability comparison
 
-| Capacidad / Recurso | Backend API (Spring Boot) | TUI (Cliente Python) |
+| Capability / Resource | Backend API (Spring Boot) | TUI (Python client) |
 |---------------------|---------------------------|----------------------|
-| Autenticación (`JSESSIONID`) | ✅ Soportado | ✅ Soportado |
-| Gestión de Usuarios (Staff) | ✅ CRUD completo (solo ADMIN) | ✅ Alta y baja (solo ADMIN) |
-| Gestión de Clientes (CRM) | ✅ CRUD completo + filtros por asesor | ✅ Alta, edición y baja |
-| Catálogo de activos | ✅ CRUD completo | ✅ Alta y baja (edición vía API) |
-| Transacciones y libro mayor | ✅ Global (ADMIN) e individual (ASESOR) | ✅ Historial individual por cliente |
-| Cálculo NAV y cartera | ✅ Multi-divisa dinámica (`?divisa=`) | ✅ Fijado a divisa base (EUR) |
-| Intereses y devengos | ✅ Desglose de intereses generados | ❌ Agrupado en saldo total |
-| Sincronización Yahoo Finance | ✅ Automática asíncrona (`@Scheduled`) | ✅ Transparente al cliente |
+| Authentication (`JSESSIONID`) | ✅ Supported | ✅ Supported |
+| User (staff) management | ✅ Full CRUD (ADMIN only) | ✅ Create and delete (ADMIN only) |
+| Client management (CRM) | ✅ Full CRUD + filters by advisor | ✅ Create, edit and delete |
+| Asset catalogue | ✅ Full CRUD | ✅ Create and delete (edit via API) |
+| Transactions and ledger | ✅ Global (ADMIN) and per client (ASESOR) | ✅ Per-client history |
+| NAV and portfolio calculation | ✅ Dynamic multi-currency (`?divisa=`) | ✅ Fixed to base currency (EUR) |
+| Interest and accruals | ✅ Breakdown of generated interest | ❌ Grouped into total balance |
+| Yahoo Finance sync | ✅ Automatic, asynchronous (`@Scheduled`) | ✅ Transparent to the client |
 
-### Limitaciones operativas de la TUI
+### TUI operational limitations
 
-Las operaciones siguientes están **reservadas a la API REST** (integraciones externas, automatización o `curl`). La TUI no las sustituye; el contrato oficial del sistema es siempre la API:
+The following operations are **reserved for the REST API** (external integrations, automation or `curl`). The TUI does not replace them; the official contract of the system is always the API:
 
-- **Listado global de transacciones** del sistema (`GET /api/transacciones`) — solo **ADMIN**; la terminal solo muestra el historial por cliente.
-- **Alteración manual de la fecha** de una transacción en alta o edición — la TUI registra con la fecha del servidor (actual por defecto); la API acepta `fecha` en el cuerpo del `PUT`/`POST`.
-- **Edición (`PUT`) de activos financieros** existentes (ticker, nombre, precio de mercado, moneda) — solo **ADMIN** en backend; en Market la TUI permite crear y eliminar, no modificar.
-- **Cambio de divisa base** para consolidar y visualizar el NAV (`?divisa=USD`, `GBP`, etc.) — soportado dinámicamente por la API; la TUI consolida y muestra el informe en **EUR**.
+- **Global transaction list** (`GET /api/transacciones`) — **ADMIN** only; the terminal only shows per-client history.
+- **Manually changing the date** of a transaction on create or edit — the TUI records the server date (current by default); the API accepts `fecha` in the `PUT`/`POST` body.
+- **Editing (`PUT`) existing financial assets** (ticker, name, market price, currency) — **ADMIN** only in the backend; in Market the TUI lets you create and delete, not modify.
+- **Changing the base currency** used to consolidate and display NAV (`?divisa=USD`, `GBP`, etc.) — supported dynamically by the API; the TUI consolidates and shows the report in **EUR**.
 
-> **Integradores:** cualquier nuevo canal (web, móvil, reporting regulatorio) debe implementarse contra los endpoints documentados en esta guía, sin duplicar reglas de negocio fuera del backend.
+> **Integrators:** any new channel (web, mobile, regulatory reporting) must be built against the endpoints documented in this guide, without duplicating business rules outside the backend.
 
 ---
 
-## 📖 Guía de Uso
+## 📖 Usage Guide
 
-### Usuarios de prueba
+### Test users
 
-Contraseña común para todos: **`secret123`**
+Demo users seeded by `data.sql` for **local testing only** (shared password: **`secret123`**). Change them before exposing the API anywhere.
 
-| Usuario | Rol | Alcance típico |
+| User | Role | Typical scope |
 |---------|-----|----------------|
-| `admin_jefe` | ADMIN | Todos los clientes, usuarios y activos |
-| `asesor_aleix` | ASESOR | Solo clientes asignados a Aleix |
-| `asesor_maria` | ASESOR | Solo clientes asignados a María |
+| `admin_jefe` | ADMIN | All clients, users and assets |
+| `asesor_aleix` | ASESOR | Only clients assigned to Aleix |
+| `asesor_maria` | ASESOR | Only clients assigned to María |
 
-### Interacción recomendada: Terminal TUI
+### Recommended interaction: TUI terminal
 
-1. Arranca backend + base de datos.  
-2. Ejecuta `python app.py` en `terminal-client/`.  
-3. Inicia sesión → explora NAV, registra operaciones en *Trading Desk*, gestiona clientes en *CRM*.  
-4. El rol determina qué pestañas y botones están disponibles (p. ej. *Staff* solo para administradores).
+1. Start the backend + database.  
+2. Run `python app.py` in `terminal-client/`.  
+3. Log in → explore NAV, record trades in *Trading Desk*, manage clients in *CRM*.  
+4. The role determines which tabs and buttons are available (e.g. *Staff* is admin-only).
 
-### API REST alternativa (cURL)
+### Alternative: REST API (cURL)
 
-La API sigue siendo el contrato oficial del sistema. CSRF está desactivado para facilitar integraciones; la autenticación es por **cookie de sesión** tras `POST /api/login`.
+The API remains the official contract of the system. CSRF is disabled to make integrations easier; authentication uses a **session cookie** after `POST /api/login`.
 
 <details>
-<summary>Ver ejemplos de API REST pura con cURL</summary>
+<summary>Show plain REST API examples with cURL</summary>
 
-#### Login (obtener `JSESSIONID`)
+#### Login (get `JSESSIONID`)
 
 ```bash
 curl -i -X POST http://localhost:8080/api/login \
@@ -237,7 +241,7 @@ curl -i -X POST http://localhost:8080/api/login \
   -c cookies.txt
 ```
 
-#### Depósito de capital
+#### Cash deposit
 
 ```bash
 curl -b cookies.txt -X POST http://localhost:8080/api/transacciones \
@@ -250,21 +254,21 @@ curl -b cookies.txt -X POST http://localhost:8080/api/transacciones \
   }'
 ```
 
-#### Compra de acciones (ej. Apple, activo id 2)
+#### Buying shares (e.g. Apple / AAPL, asset id 1)
 
 ```bash
 curl -b cookies.txt -X POST http://localhost:8080/api/transacciones \
   -H "Content-Type: application/json" \
   -d '{
     "cliente": {"id": 1},
-    "activoFinanciero": {"id": 2},
+    "activoFinanciero": {"id": 1},
     "tipoOperacion": "COMPRA",
     "cantidad": 10,
     "precioEjecucion": 180.0
   }'
 ```
 
-#### Dividendo o alquiler (ingreso sobre activo)
+#### Dividend or rent (income on an asset)
 
 ```bash
 curl -b cookies.txt -X POST http://localhost:8080/api/transacciones \
@@ -278,22 +282,22 @@ curl -b cookies.txt -X POST http://localhost:8080/api/transacciones \
   }'
 ```
 
-#### Cartera consolidada (NAV)
+#### Consolidated portfolio (NAV)
 
 ```bash
 curl -b cookies.txt -X GET "http://localhost:8080/api/clientes/1/cartera?divisa=EUR" | jq
 ```
 
-#### Historial de transacciones por cliente
+#### Transaction history per client
 
 ```bash
 curl -b cookies.txt -X GET "http://localhost:8080/api/transacciones/cliente/1" | jq
 ```
 
-#### Actualizar / eliminar transacción
+#### Update / delete a transaction
 
 ```bash
-# PUT — corregir precio o tipo
+# PUT — fix price or type
 curl -b cookies.txt -X PUT http://localhost:8080/api/transacciones/42 \
   -H "Content-Type: application/json" \
   -d '{
@@ -314,7 +318,7 @@ curl -b cookies.txt -X DELETE http://localhost:8080/api/transacciones/42
 
 ## 🧪 Tests
 
-La lógica financiera central (`ClienteService`) incluye pruebas unitarias con mocks (sin base de datos real):
+The core financial logic (`ClienteService`) has unit tests with Mockito (no real database): NAV with cash and stocks, the MiFID II alert for conservative clients, and FX conversion for foreign assets. A Spring context test is also included.
 
 ```bash
 ./mvnw test
@@ -322,33 +326,47 @@ La lógica financiera central (`ClienteService`) incluye pruebas unitarias con m
 
 ---
 
-## 🛡️ Auditoría y Conformidad
+## 🛡️ Audit and Compliance
 
-Este sistema aborda las carencias habituales de gestión patrimonial en hojas de cálculo aisladas:
+This system addresses the usual gaps of managing client wealth in isolated spreadsheets:
 
-| Área | Enfoque |
+| Area | Approach |
 |------|---------|
-| **Confidencialidad** | PostgreSQL centralizado, acceso autenticado y segregación por asesor |
-| **Integridad** | Ledger de transacciones como fuente de verdad del NAV |
-| **Trazabilidad** | Operaciones tipadas (`COMPRA`, `VENTA`, `DEPOSITO`, `RETIRO`, `DIVIDENDO`, `ALQUILER`) con control de acceso previo a cada mutación |
-| **Normativa** | Alertas MiFID II en cartera conservadora |
+| **Confidentiality** | Centralised PostgreSQL, authenticated access and segregation by advisor |
+| **Integrity** | Transaction ledger as the source of truth for NAV |
+| **Traceability** | Typed operations (`COMPRA`, `VENTA`, `DEPOSITO`, `RETIRO`, `DIVIDENDO`, `ALQUILER`) with access control before every mutation |
+| **Regulation** | MiFID II alerts on conservative portfolios |
 
-> **Nota:** Las transacciones pueden corregirse vía API/TUI bajo políticas de acceso (ADMIN / ASESOR del cliente). Para entornos regulados de producción se recomienda complementar con auditoría inmutable (historial de cambios, asientos de reversión).
-
----
-
-## 📁 Estructura del Repositorio
-
-```
-sistema-financiero/
-├── .env                    # Secretos locales (no versionado)
-├── docker-compose.yml      # PostgreSQL
-├── src/main/java/          # Backend Spring Boot
-├── src/main/resources/     # schema.sql, data.sql, application.properties
-├── terminal-client/        # TUI Textual (app.py, api_client.py, styles.tcss)
-└── pom.xml
-```
+> **Note:** Transactions can be corrected via the API/TUI under access policies (ADMIN / the client's ASESOR). For regulated production environments, complementing this with an immutable audit trail (change history, reversal entries) is recommended.
 
 ---
 
-**FinanzDaroca** · Motor patrimonial, terminal profesional y API REST unificados para la gestión diaria del asesor independiente.
+## 📁 Repository Structure
+
+```
+finanzdaroca-api/
+├── .env                          # Local secrets (not versioned)
+├── docker-compose.yml            # PostgreSQL 15
+├── pom.xml                       # Spring Boot 4.0.6, Java 21, Lombok
+├── src/main/java/com/daroca/sistema_financiero/
+│   ├── config/                   # SecurityConfig, SecurityExceptionHandler
+│   ├── controller/               # Auth, Cliente, Transaccion, ActivoFinanciero, Usuario (REST)
+│   ├── dto/                      # Portfolio / NAV report / position DTOs
+│   ├── entity/                   # Cliente, Transaccion, ActivoFinanciero, Usuario, Rol, TipoOperacion
+│   ├── integration/              # YahooFinanceChartClient (cached quotes)
+│   ├── repository/               # Spring Data JPA repositories
+│   ├── security/                 # CustomUserDetailsService, SecurityAuditService (role + per-client checks)
+│   ├── service/                  # ClienteService (NAV, MiFID, FX), TransaccionService, PrecioMercadoSyncService (@Scheduled)…
+│   └── util/                     # MonedaFinancieraUtil (currency handling, GBp)
+├── src/main/resources/           # application.properties, schema.sql, data.sql (demo data)
+├── src/test/java/…               # ClienteServiceTest (JUnit 5 + Mockito), context test
+└── terminal-client/              # Textual TUI
+    ├── app.py                    # Full TUI (tabs, CRUD, role-aware UI)
+    ├── main.py                   # Earlier minimal client (login + one portfolio)
+    ├── api_client.py             # requests session with JSESSIONID cookie
+    └── app.tcss, styles.tcss     # Textual styles
+```
+
+---
+
+**FinanzDaroca** · Wealth engine, professional terminal and REST API unified for the independent advisor's day-to-day work.
